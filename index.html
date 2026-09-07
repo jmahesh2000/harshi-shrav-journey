@@ -70,6 +70,7 @@ footer p{margin:4px;color:#d8e6ee}.footer-big{font-size:20px;font-weight:900}
 
 <main id="app" class="page"></main>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const H="images/harshith.jpg",S="images/shravan.jpeg";
 const data={
@@ -80,7 +81,60 @@ shravan:{name:"Shravan",nick:"Shrav",age:13,img:S,motto:"Build · Learn · Chall
 interests:["♟️ Chess","🎮 Video Games","💻 Coding","🥋 Karate","🏀 Basketball","🎹 Keyboard"],
 now:["Exploring new music using keyboard","Geometry and PSAT preparation","Improving basketball skills","Exploring science experiments","Continuing coding","Learning computer basics"]}
 };
-let posts=JSON.parse(localStorage.getItem("hsPosts")||"[]");
+const SUPABASE_URL = "https://feuqwyxillidclvxyxoi.supabase.co";
+
+const SUPABASE_KEY = "sb_publishable_I6ZI6sZ7OzMw9qq6tcQ5Lw_43sM0Pcm";
+
+const supabaseClient = supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+let posts = [];
+let profiles = {};
+
+async function loadProfiles() {
+  const { data: rows, error } = await supabaseClient
+    .from("profiles")
+    .select("id, display_name, role");
+
+  if (error) {
+    console.error("Error loading profiles:", error);
+    profiles = {};
+    return;
+  }
+
+  profiles = {};
+  (rows || []).forEach(profile => {
+    profiles[String(profile.role || "").toLowerCase()] = profile;
+  });
+}
+
+async function loadPosts() {
+  const { data: rows, error } = await supabaseClient
+    .from("posts")
+    .select(`
+      id,
+      author_id,
+      title,
+      content,
+      status,
+      cover_image,
+      created_at,
+      updated_at,
+      profiles ( display_name, role )
+    `)
+    .eq("status", "published")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error loading posts:", error);
+    posts = [];
+    return;
+  }
+
+  posts = rows || [];
+}
 function esc(x=""){return x.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function go(r){location.hash=r}
 function profile(key){
@@ -121,19 +175,165 @@ ${latest()}
 function nowPanel(key){let p=data[key];return `<div class="panel ${key==="shravan"?"shrav":""}"><div class="label">${p.name.toUpperCase()}</div><h3>${p.motto}</h3><ul>${p.now.map(x=>`<li>${x}</li>`).join("")}</ul></div>`}
 function project(icon,title,txt){return `<article class="project"><div class="project-body"><div style="font-size:32px">${icon}</div><h3>${title}</h3><p>${txt}</p></div></article>`}
 function mile(a,b,c){return `<div class="milestone"><div class="dot"></div><strong>${a} · ${b}</strong><p>${c}</p></div>`}
-function latest(){if(!posts.length)return `<div class="empty panel" style="text-align:center;color:#64748b">No blog posts yet. Start the first adventure from Harshith or Shravan's page.</div>`;return `<div class="blog-grid">${posts.slice(-3).reverse().map(p=>`<article class="post"><div class="post-body"><div class="label">${p.author.toUpperCase()} · ${p.category}</div><h3>${esc(p.title)}</h3><p>${esc(p.body).slice(0,150)}...</p></div></article>`).join("")}</div>`}
+function latest(){
+
+  if(!posts.length){
+
+    return `
+      <div class="empty panel"
+           style="text-align:center;color:#64748b">
+
+        No blog posts yet.
+        Start the first adventure from Harshith or Shravan's page.
+
+      </div>
+    `;
+
+  }
+
+  return `
+
+    <div class="blog-grid">
+
+      ${posts.slice(0,3).map(post => `
+
+        <article class="post">
+
+          ${post.cover_image ? `
+            <img
+              src="${post.cover_image}"
+              alt="${esc(post.title)}"
+              style="
+                width:100%;
+                height:180px;
+                object-fit:cover;
+              "
+            >
+          ` : ""}
+
+          <div class="post-body">
+
+            <div class="label">
+
+              ${
+                post.profiles?.display_name ||
+                "OUR JOURNEY"
+              }
+
+            </div>
+
+            <h3>${esc(post.title)}</h3>
+
+            <p>
+              ${esc(post.content || "").slice(0,150)}
+            </p>
+
+          </div>
+
+        </article>
+
+      `).join("")}
+
+    </div>
+
+  `;
+
+}
 function person(key){
-let p=data[key], ps=posts.filter(x=>x.author===p.nick);
-document.getElementById("app").innerHTML=`<div class="section-title"><div><h2>${key==="harshith"?"🎨":"🚀"} ${p.name}'s Space</h2><p>${p.age} years old · ${p.motto}</p></div><button class="cta" onclick="newPost('${key}')">＋ New Blog Post</button></div>
-<section class="two"><div class="panel"><img class="photo" style="width:100%;height:330px" src="${p.img}" alt="${p.name}"></div><div class="panel"><div class="label">MY INTERESTS</div><div class="tags">${p.interests.map(x=>`<span class="tag">${x}</span>`).join("")}</div><h3 style="margin-top:25px">🚀 What I'm Working On</h3><ul>${p.now.map(x=>`<li>${x}</li>`).join("")}</ul></div></section>
-<div class="section-title"><div><h2>📝 ${p.nick}'s Blog</h2><p>Experiences, learnings, likes and discoveries.</p></div></div>
-${ps.length?`<div class="blog-grid">${ps.reverse().map((x,i)=>`<article class="post"><div class="post-body"><div class="label">${x.category} · ${x.date}</div><h3>${esc(x.title)}</h3><p>${esc(x.body)}</p></div></article>`).join("")}</div>`:`<div class="empty panel" style="text-align:center"><h3>No posts yet!</h3><p>Start sharing your experiences and learnings.</p><button class="cta" onclick="newPost('${key}')">Create First Post</button></div>`}`;
+  const p = data[key];
+  const profileRow = profiles[key];
+  const ps = posts.filter(post =>
+    post.profiles?.role === key || post.author_id === profileRow?.id
+  );
+
+  document.getElementById("app").innerHTML=`
+    <div class="section-title">
+      <div>
+        <h2>${key==="harshith"?"🎨":"🚀"} ${p.name}'s Space</h2>
+        <p>${p.age} years old · ${p.motto}</p>
+      </div>
+      <button class="cta" onclick="newPost('${key}')">＋ New Blog Post</button>
+    </div>
+    <section class="two">
+      <div class="panel"><img class="photo" style="width:100%;height:330px" src="${p.img}" alt="${p.name}"></div>
+      <div class="panel">
+        <div class="label">MY INTERESTS</div>
+        <div class="tags">${p.interests.map(x=>`<span class="tag">${x}</span>`).join("")}</div>
+        <h3 style="margin-top:25px">🚀 What I'm Working On</h3>
+        <ul>${p.now.map(x=>`<li>${x}</li>`).join("")}</ul>
+      </div>
+    </section>
+    <div class="section-title"><div><h2>📝 ${p.nick}'s Blog</h2><p>Experiences, learnings, likes and discoveries.</p></div></div>
+    ${ps.length ? `
+      <div class="blog-grid">
+        ${ps.map(post=>`
+          <article class="post">
+            ${post.cover_image ? `<img src="${post.cover_image}" alt="${esc(post.title)}" style="width:100%;height:180px;object-fit:cover">` : ""}
+            <div class="post-body">
+              <div class="label">${esc(post.profiles?.display_name || p.name)} · ${post.created_at ? new Date(post.created_at).toLocaleDateString(undefined,{month:"short",year:"numeric"}) : ""}</div>
+              <h3>${esc(post.title)}</h3>
+              <p>${esc(post.content || "")}</p>
+            </div>
+          </article>`).join("")}
+      </div>` : `
+      <div class="empty panel" style="text-align:center">
+        <h3>No posts yet!</h3>
+        <p>Start sharing your experiences and learnings.</p>
+        <button class="cta" onclick="newPost('${key}')">Create First Post</button>
+      </div>`}
+  `;
 }
+
 function newPost(key){
-let p=data[key];document.getElementById("app").innerHTML=`<div class="panel" style="max-width:780px;margin:25px auto"><h2>📝 New Post for ${p.nick}</h2><p style="color:#64748b">Share an experience, something you learned, a project, or something you like.</p>
-<form onsubmit="publish(event,'${p.nick}')"><label>Title</label><input id="title" required placeholder="My first violin practice..." style="width:100%;padding:12px;margin:7px 0 15px;border:1px solid #ddd;border-radius:10px"><label>Category</label><select id="cat" style="width:100%;padding:12px;margin:7px 0 15px;border:1px solid #ddd;border-radius:10px"><option>Experience</option><option>Learning</option><option>Sports</option><option>Music</option><option>Crafts</option><option>Coding</option><option>Science</option><option>Favorites</option></select><label>Write your post</label><textarea id="body" required placeholder="What happened? What did you learn? What did you like?" style="width:100%;min-height:220px;padding:12px;margin:7px 0 15px;border:1px solid #ddd;border-radius:10px"></textarea><button class="cta">Publish Post</button> <button type="button" class="cta" style="background:#64748b" onclick="go('${key}')">Cancel</button></form></div>`
+  const p=data[key];
+  document.getElementById("app").innerHTML=`
+    <div class="panel" style="max-width:780px;margin:25px auto">
+      <h2>📝 New Post for ${p.nick}</h2>
+      <p style="color:#64748b">Share an experience, something you learned, a project, or something you like.</p>
+      <form onsubmit="publish(event,'${key}')">
+        <label>Title</label>
+        <input id="title" required placeholder="My first violin practice..." style="width:100%;padding:12px;margin:7px 0 15px;border:1px solid #ddd;border-radius:10px">
+        <label>Write your post</label>
+        <textarea id="body" required placeholder="What happened? What did you learn? What did you like?" style="width:100%;min-height:220px;padding:12px;margin:7px 0 15px;border:1px solid #ddd;border-radius:10px"></textarea>
+        <div id="postMessage" style="margin-bottom:12px;color:#64748b"></div>
+        <button class="cta" type="submit">Publish Post</button>
+        <button type="button" class="cta" style="background:#64748b" onclick="go('${key}')">Cancel</button>
+      </form>
+    </div>`;
 }
-function publish(e,author){e.preventDefault();posts.push({author,title:document.getElementById("title").value,category:document.getElementById("cat").value,body:document.getElementById("body").value,date:new Date().toLocaleDateString(undefined,{month:"short",year:"numeric"})});localStorage.setItem("hsPosts",JSON.stringify(posts));go(author==="Harshi"?"harshith":"shravan")}
+
+async function publish(e,key){
+  e.preventDefault();
+  const message = document.getElementById("postMessage");
+  const profileRow = profiles[key];
+  if(!profileRow?.id){
+    message.textContent = "Profile is not configured in Supabase yet.";
+    return;
+  }
+
+  const title = document.getElementById("title").value.trim();
+  const content = document.getElementById("body").value.trim();
+  message.textContent = "Publishing...";
+
+  const { error } = await supabaseClient
+    .from("posts")
+    .insert({
+      author_id: profileRow.id,
+      title,
+      content,
+      status: "published"
+    });
+
+  if(error){
+    console.error("Error publishing post:", error);
+    message.textContent = "Could not publish the post. Check the Supabase RLS INSERT policy.";
+    return;
+  }
+
+  await loadPosts();
+  go(key);
+  if(location.hash.slice(1) === key) person(key);
+}
 function gallery(){
 document.getElementById("app").innerHTML=`<div class="section-title"><div><h2>📸 Gallery</h2><p>Moments from our journey.</p></div></div><div class="two"><div class="panel"><img src="${H}" style="width:100%;height:430px;object-fit:cover;border-radius:15px"><h3>Harshi</h3><p>Creating, learning and exploring.</p></div><div class="panel"><img src="${S}" style="width:100%;height:430px;object-fit:cover;border-radius:15px"><h3>Shrav</h3><p>Building, learning and challenging himself.</p></div></div>`}
 function projects(){document.getElementById("app").innerHTML=`<div class="section-title"><div><h2>🚀 Our Projects & Creations</h2><p>Ideas we are exploring together and individually.</p></div></div><div class="project-grid">${project("🎨","Harshi's Craft Business","New crafts, product ideas, making, pricing and learning about entrepreneurship.")}${project("🎻","Harshi's Violin Journey","Practice notes, songs, milestones and what he learns along the way.")}${project("🎾","Sports Journey","Tennis, pickleball and basketball practice and progress.")}${project("💻","Shrav's Coding","Computer basics, coding experiments and future projects.")}${project("🔬","Science Lab","Questions, experiments, observations and discoveries.")}${project("🎹","Keyboard Journey","Songs Shrav is learning and music milestones.")}</div>`}
@@ -143,15 +343,47 @@ function setActiveNav(route){
   if(activeButton) activeButton.classList.add("primary");
 }
 
-function render(){
-  let r=location.hash.slice(1)||"home";
-  if(!["home","harshith","shravan","projects","gallery"].includes(r)) r="home";
+async function render(){
+
+  let r = location.hash.slice(1) || "home";
+
+  if(![
+    "home",
+    "harshith",
+    "shravan",
+    "projects",
+    "gallery"
+  ].includes(r)){
+    r = "home";
+  }
+
   setActiveNav(r);
-  r==="home" ? home()
-    : r==="harshith" ? person("harshith")
-    : r==="shravan" ? person("shravan")
-    : r==="gallery" ? gallery()
-    : projects();
+
+  document.getElementById("app").innerHTML = `
+    <div class="panel" style="text-align:center">
+      Loading...
+    </div>
+  `;
+
+  await loadProfiles();
+  await loadPosts();
+
+  if(r === "home"){
+    home();
+  }
+  else if(r === "harshith"){
+    person("harshith");
+  }
+  else if(r === "shravan"){
+    person("shravan");
+  }
+  else if(r === "gallery"){
+    gallery();
+  }
+  else{
+    projects();
+  }
+
 }
 window.addEventListener("hashchange",render);
 render();

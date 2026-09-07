@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Harshith & Shravan | Our Journey</title>
+<style>
+:root{
+ --cream:#f6f1e6;--paper:#fffdf8;--ink:#182b43;--muted:#64748b;
+ --blue:#2196d3;--purple:#7657d9;--green:#4e9b72;--orange:#ef8b35;
+ --line:#e8dfcf;--shadow:0 12px 30px rgba(35,45,60,.10)
+}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--cream);color:var(--ink);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+button{font:inherit;cursor:pointer}
+header{position:sticky;top:0;z-index:20;background:rgba(255,253,248,.94);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.nav{max-width:1250px;margin:auto;display:flex;align-items:center;gap:8px;padding:10px 20px}
+.logo{display:flex;align-items:center;gap:10px;margin-right:auto;font-weight:900;font-size:19px}
+.logo-mark{font-size:27px}.logo-mark-img{width:48px;height:48px;object-fit:cover;border-radius:9px;display:block;box-shadow:0 2px 7px rgba(0,0,0,.15)}.tagline{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.5px}
+.nav button{border:0;background:transparent;color:var(--ink);font-weight:800;padding:10px 13px;border-radius:12px}
+.nav button:hover{background:#edf6fb}.nav .primary{background:#e9f5fb;color:#1479ae}
+.page{max-width:1250px;margin:auto;padding:22px 20px 60px}
+.hero{min-height:365px;border-radius:28px;overflow:hidden;position:relative;display:flex;align-items:flex-start;justify-content:center;text-align:center;padding:28px 25px;background:
+linear-gradient(rgba(205,229,238,.88),rgba(247,241,226,.42)),linear-gradient(180deg,#a9d6ed,#e9e0c9);box-shadow:var(--shadow)}
+.hero:before{content:none}
+.hero-content{position:relative;z-index:2;max-width:760px}
+.hero-kicker{font-size:11px;letter-spacing:2.5px;font-weight:900;color:#315c75}
+.hero h1{font-size:clamp(42px,6vw,68px);font-weight:800;margin:2px 0 6px;font-family:"Trebuchet MS",sans-serif;letter-spacing:-2px}
+.hero h2{margin:0 0 7px;font-size:19px}.hero p{color:#38546b;font-size:15px;margin:5px 0}
+.signs{display:flex;justify-content:center;gap:9px;flex-wrap:wrap;margin:14px 0}
+.sign{padding:7px 17px;color:white;font-weight:900;transform:rotate(-2deg);box-shadow:0 5px 10px #0002}
+.sign:nth-child(1){background:#5a8f78}.sign:nth-child(2){background:#e18a35;transform:rotate(2deg)}
+.sign:nth-child(3){background:#4c91ad;transform:rotate(-1deg)}.sign:nth-child(4){background:#d36c5e;transform:rotate(2deg)}
+.brothers{position:relative;z-index:3;margin:-70px auto 0;max-width:1120px;display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.bro-card{background:var(--paper);border-radius:22px;padding:16px;box-shadow:var(--shadow);display:grid;grid-template-columns:185px 1fr;gap:18px;align-items:center}
+.photo{width:185px;height:225px;object-fit:cover;object-position:center center;border-radius:14px;display:block}
+.bro-card h2{font-size:29px;margin:0 0 2px}.age{font-size:13px;color:var(--muted);font-weight:800}.motto{font-weight:900;margin:8px 0}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin:9px 0}.tag{font-size:12px;font-weight:800;background:#eef3f5;padding:6px 9px;border-radius:999px}
+.cta{border:0;border-radius:999px;padding:10px 15px;color:white;font-weight:900;background:var(--blue)}
+.shrav .cta{background:var(--purple)}
+.section-title{display:flex;align-items:end;justify-content:space-between;margin:42px 4px 16px}
+.section-title h2{font-size:29px;margin:0}.section-title p{margin:3px 0;color:var(--muted)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:var(--shadow)}
+.panel h3{margin:0 0 5px;font-size:22px}.panel ul{padding-left:21px;margin:14px 0 0}.panel li{margin:8px 0}
+.label{font-size:10px;font-weight:900;letter-spacing:2px;color:var(--blue)}.shrav .label{color:var(--purple)}
+.blog-grid,.project-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.post,.project{background:var(--paper);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:var(--shadow)}
+.post-body,.project-body{padding:17px}.post h3,.project h3{margin:5px 0 7px}.post p,.project p{color:var(--muted);margin:0}.post button{margin-top:14px}
+.timeline{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:25px;box-shadow:var(--shadow);overflow-x:auto}
+.line{min-width:0;display:grid;grid-template-columns:repeat(5,1fr);gap:0;position:relative;padding-top:30px}
+.line:before{content:"";height:3px;background:#b9c7ca;position:absolute;left:5%;right:5%;top:39px}
+.milestone{text-align:center;position:relative}.dot{width:18px;height:18px;border-radius:50%;background:var(--blue);border:4px solid white;box-shadow:0 0 0 2px #b9c7ca;margin:0 auto 14px;position:relative;z-index:2}
+.milestone:nth-child(even) .dot{background:var(--orange)}.milestone strong{font-size:13px}.milestone p{font-size:12px;color:var(--muted);padding:0 6px}.timeline-head{display:flex;align-items:center;gap:12px;margin-bottom:10px}.timeline-head h3{margin:0;font-size:20px}.timeline-head p{margin:2px 0;color:var(--muted);font-size:13px}.timeline-avatar{width:52px;height:52px;border-radius:50%;overflow:hidden;flex:none;border:3px solid white;box-shadow:0 0 0 2px #b9c7ca}.timeline-avatar img{width:100%;height:100%;object-fit:cover}
+footer{margin-top:50px;padding:38px 20px;text-align:center;background:#18334b;color:white}
+footer p{margin:4px;color:#d8e6ee}.footer-big{font-size:20px;font-weight:900}
+@media(max-width:900px){.brothers,.two{grid-template-columns:1fr}.bro-card{grid-template-columns:130px 1fr}.photo{width:130px;height:175px}.blog-grid,.project-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:620px){.nav{overflow-x:auto}.logo{min-width:205px}.logo-mark-img{width:42px;height:42px}.nav button{white-space:nowrap}.hero{min-height:340px;padding:24px 18px}.brothers{margin:16px auto 0}.bro-card{grid-template-columns:1fr}.photo{width:100%;height:300px;object-position:center 25%}.blog-grid,.project-grid{grid-template-columns:1fr}.section-title{display:block}.section-title p{margin-top:5px}}
+</style>
+</head>
+<body>
+<header><nav class="nav">
+<div class="logo"><img class="logo-mark-img" src="images/logo.jpg" alt="Harshith & Shravan"><div>Harshith & Shravan<div class="tagline">LEARN · CREATE · EXPLORE · GROW</div></div></div>
+<button id="nav-home" onclick="go('home')">⌂ Home</button>
+<button id="nav-harshith" onclick="go('harshith')">👦 Harshith⌄</button>
+<button id="nav-shravan" onclick="go('shravan')">👦 Shravan⌄</button>
+<button id="nav-projects" onclick="go('projects')">💡 Our Projects</button>
+<button id="nav-gallery" onclick="go('gallery')">📸 Gallery</button>
+</nav></header>
+
+<main id="app" class="page"></main>
+
+<script>
+const H="images/harshith.jpg",S="images/shravan.jpeg";
+const data={
+harshith:{name:"Harshith",nick:"Harshi",age:9,img:H,motto:"Create · Explore · Play",
+interests:["🎨 Crafts","🎻 Violin","🎾 Tennis","🏓 Pickleball","💡 Entrepreneurship","🎥 YouTube"],
+now:["Learning violin","Play tennis and pickleball","Design new crafts","Exploring craft ideas to sell","Create new YouTube videos","Learning fractions in math"]},
+shravan:{name:"Shravan",nick:"Shrav",age:13,img:S,motto:"Build · Learn · Challenge",
+interests:["♟️ Chess","🎮 Video Games","💻 Coding","🥋 Karate","🏀 Basketball","🎹 Keyboard"],
+now:["Exploring new music using keyboard","Geometry and PSAT preparation","Improving basketball skills","Exploring science experiments","Continuing coding","Learning computer basics"]}
+};
+let posts=JSON.parse(localStorage.getItem("hsPosts")||"[]");
+function esc(x=""){return x.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function go(r){location.hash=r}
+function profile(key){
+let p=data[key];return `<article class="bro-card ${key==="shravan"?"shrav":""}">
+<img class="photo" src="${p.img}" alt="${p.name}">
+<div><div class="age">${p.age} YEARS OLD</div><h2>${p.name}</h2><div class="motto">${p.motto}</div>
+<div class="tags">${p.interests.map(x=>`<span class="tag">${x}</span>`).join("")}</div>
+<button class="cta" onclick="go('${key}')">Explore ${p.nick} →</button></div></article>`}
+function home(){
+document.getElementById("app").innerHTML=`
+<section class="hero"><div class="hero-content"><div class="hero-kicker">TWO BROTHERS · TWO PERSONALITIES · ONE AMAZING STORY</div>
+<h1>Our Journey</h1><h2>A place where we share what we learn, create, play and achieve.</h2>
+<p>Follow our journey as we explore, experiment and grow together!</p>
+<div class="signs"><span class="sign">EXPLORE</span><span class="sign">LEARN</span><span class="sign">CREATE</span><span class="sign">GROW</span></div></div></section>
+<section class="brothers">${profile("harshith")}${profile("shravan")}</section>
+<div class="section-title"><div><h2>🌱 What We're Doing Now</h2><p>A quick look at what we're currently focused on.</p></div></div>
+<section class="two">${nowPanel("harshith")}${nowPanel("shravan")}</section>
+<div class="section-title"><div><h2>📝 Latest Adventures</h2><p>Our experiences, learnings and things we enjoy.</p></div></div>
+${latest()}
+<div class="section-title"><div><h2>🚀 Our Projects & Creations</h2><p>Ideas, experiments and things we're building.</p></div></div>
+<div class="project-grid">${project("🎨","Craft Ideas","Creative crafts and business ideas.")}${project("🔬","Science Experiments","Exploring how things work.")}${project("💻","Coding Projects","Learning to build something awesome.")}</div>
+<div class="section-title"><div><h2>🗺️ Our Journey Timeline</h2><p>Two paths, shared adventures and plenty of milestones.</p></div></div>
+<div class="two timelines">
+  <div class="timeline person-timeline">
+    <div class="timeline-head"><div class="timeline-avatar"><img src="${data.harshith.img}" alt="Harshith"></div><div><h3>Harshith's Journey</h3><p>Creating · Exploring · Playing</p></div></div>
+    <div class="line">
+      ${mile("Jun","Started","Our website journey")}${mile("Jul","Violin","Began learning violin")}${mile("Aug","Tennis","Practicing tennis & pickleball")}${mile("Sep","Crafts","Design new crafts")}${mile("Next","Business","Exploring business ideas")}
+    </div>
+  </div>
+  <div class="timeline person-timeline">
+    <div class="timeline-head"><div class="timeline-avatar"><img src="${data.shravan.img}" alt="Shravan"></div><div><h3>Shravan's Journey</h3><p>Building · Learning · Challenging</p></div></div>
+    <div class="line">
+      ${mile("Jun","Started","Our website journey")}${mile("Jul","Geometry","Learning new levels")}${mile("Aug","Basketball","Improving skills")}${mile("Sep","Science","Exploring experiments")}${mile("Next","Coding","Building projects")}
+    </div>
+  </div>
+</div>`;
+}
+function nowPanel(key){let p=data[key];return `<div class="panel ${key==="shravan"?"shrav":""}"><div class="label">${p.name.toUpperCase()}</div><h3>${p.motto}</h3><ul>${p.now.map(x=>`<li>${x}</li>`).join("")}</ul></div>`}
+function project(icon,title,txt){return `<article class="project"><div class="project-body"><div style="font-size:32px">${icon}</div><h3>${title}</h3><p>${txt}</p></div></article>`}
+function mile(a,b,c){return `<div class="milestone"><div class="dot"></div><strong>${a} · ${b}</strong><p>${c}</p></div>`}
+function latest(){if(!posts.length)return `<div class="empty panel" style="text-align:center;color:#64748b">No blog posts yet. Start the first adventure from Harshith or Shravan's page.</div>`;return `<div class="blog-grid">${posts.slice(-3).reverse().map(p=>`<article class="post"><div class="post-body"><div class="label">${p.author.toUpperCase()} · ${p.category}</div><h3>${esc(p.title)}</h3><p>${esc(p.body).slice(0,150)}...</p></div></article>`).join("")}</div>`}
+function person(key){
+let p=data[key], ps=posts.filter(x=>x.author===p.nick);
+document.getElementById("app").innerHTML=`<div class="section-title"><div><h2>${key==="harshith"?"🎨":"🚀"} ${p.name}'s Space</h2><p>${p.age} years old · ${p.motto}</p></div><button class="cta" onclick="newPost('${key}')">＋ New Blog Post</button></div>
+<section class="two"><div class="panel"><img class="photo" style="width:100%;height:330px" src="${p.img}" alt="${p.name}"></div><div class="panel"><div class="label">MY INTERESTS</div><div class="tags">${p.interests.map(x=>`<span class="tag">${x}</span>`).join("")}</div><h3 style="margin-top:25px">🚀 What I'm Working On</h3><ul>${p.now.map(x=>`<li>${x}</li>`).join("")}</ul></div></section>
+<div class="section-title"><div><h2>📝 ${p.nick}'s Blog</h2><p>Experiences, learnings, likes and discoveries.</p></div></div>
+${ps.length?`<div class="blog-grid">${ps.reverse().map((x,i)=>`<article class="post"><div class="post-body"><div class="label">${x.category} · ${x.date}</div><h3>${esc(x.title)}</h3><p>${esc(x.body)}</p></div></article>`).join("")}</div>`:`<div class="empty panel" style="text-align:center"><h3>No posts yet!</h3><p>Start sharing your experiences and learnings.</p><button class="cta" onclick="newPost('${key}')">Create First Post</button></div>`}`;
+}
+function newPost(key){
+let p=data[key];document.getElementById("app").innerHTML=`<div class="panel" style="max-width:780px;margin:25px auto"><h2>📝 New Post for ${p.nick}</h2><p style="color:#64748b">Share an experience, something you learned, a project, or something you like.</p>
+<form onsubmit="publish(event,'${p.nick}')"><label>Title</label><input id="title" required placeholder="My first violin practice..." style="width:100%;padding:12px;margin:7px 0 15px;border:1px solid #ddd;border-radius:10px"><label>Category</label><select id="cat" style="width:100%;padding:12px;margin:7px 0 15px;border:1px solid #ddd;border-radius:10px"><option>Experience</option><option>Learning</option><option>Sports</option><option>Music</option><option>Crafts</option><option>Coding</option><option>Science</option><option>Favorites</option></select><label>Write your post</label><textarea id="body" required placeholder="What happened? What did you learn? What did you like?" style="width:100%;min-height:220px;padding:12px;margin:7px 0 15px;border:1px solid #ddd;border-radius:10px"></textarea><button class="cta">Publish Post</button> <button type="button" class="cta" style="background:#64748b" onclick="go('${key}')">Cancel</button></form></div>`
+}
+function publish(e,author){e.preventDefault();posts.push({author,title:document.getElementById("title").value,category:document.getElementById("cat").value,body:document.getElementById("body").value,date:new Date().toLocaleDateString(undefined,{month:"short",year:"numeric"})});localStorage.setItem("hsPosts",JSON.stringify(posts));go(author==="Harshi"?"harshith":"shravan")}
+function gallery(){
+document.getElementById("app").innerHTML=`<div class="section-title"><div><h2>📸 Gallery</h2><p>Moments from our journey.</p></div></div><div class="two"><div class="panel"><img src="${H}" style="width:100%;height:430px;object-fit:cover;border-radius:15px"><h3>Harshi</h3><p>Creating, learning and exploring.</p></div><div class="panel"><img src="${S}" style="width:100%;height:430px;object-fit:cover;border-radius:15px"><h3>Shrav</h3><p>Building, learning and challenging himself.</p></div></div>`}
+function projects(){document.getElementById("app").innerHTML=`<div class="section-title"><div><h2>🚀 Our Projects & Creations</h2><p>Ideas we are exploring together and individually.</p></div></div><div class="project-grid">${project("🎨","Harshi's Craft Business","New crafts, product ideas, making, pricing and learning about entrepreneurship.")}${project("🎻","Harshi's Violin Journey","Practice notes, songs, milestones and what he learns along the way.")}${project("🎾","Sports Journey","Tennis, pickleball and basketball practice and progress.")}${project("💻","Shrav's Coding","Computer basics, coding experiments and future projects.")}${project("🔬","Science Lab","Questions, experiments, observations and discoveries.")}${project("🎹","Keyboard Journey","Songs Shrav is learning and music milestones.")}</div>`}
+function setActiveNav(route){
+  document.querySelectorAll(".nav button").forEach(button => button.classList.remove("primary"));
+  const activeButton = document.getElementById("nav-" + route);
+  if(activeButton) activeButton.classList.add("primary");
+}
+
+function render(){
+  let r=location.hash.slice(1)||"home";
+  if(!["home","harshith","shravan","projects","gallery"].includes(r)) r="home";
+  setActiveNav(r);
+  r==="home" ? home()
+    : r==="harshith" ? person("harshith")
+    : r==="shravan" ? person("shravan")
+    : r==="gallery" ? gallery()
+    : projects();
+}
+window.addEventListener("hashchange",render);
+render();
+</script>
+<footer><div class="footer-big">Today We Learn · Tomorrow We Grow · Together We Go Further</div><p>Harshith & Shravan · Our Journey</p></footer>
+</body>
+</html>

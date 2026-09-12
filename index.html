@@ -18,7 +18,7 @@ header{position:sticky;top:0;z-index:20;background:rgba(255,253,248,.94);backdro
 .logo{display:flex;align-items:center;gap:10px;margin-right:auto;font-weight:900;font-size:19px}
 .logo-mark{font-size:27px}.logo-mark-img{width:48px;height:48px;object-fit:cover;border-radius:9px;display:block;box-shadow:0 2px 7px rgba(0,0,0,.15)}.tagline{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.5px}
 .nav button{border:0;background:transparent;color:var(--ink);font-weight:800;padding:10px 13px;border-radius:12px}
-.nav button:hover{background:#edf6fb}.nav .primary{background:#e9f5fb;color:#1479ae}
+.nav button:hover{background:#edf6fb}.nav .primary{background:#e9f5fb;color:#1479ae}.auth-area{display:flex;align-items:center;gap:8px;margin-left:6px}.auth-user{font-size:12px;font-weight:800;color:var(--muted);white-space:nowrap}
 .page{max-width:1250px;margin:auto;padding:22px 20px 60px}
 .hero{min-height:365px;border-radius:28px;overflow:hidden;position:relative;display:flex;align-items:flex-start;justify-content:center;text-align:center;padding:28px 25px;background:
 linear-gradient(rgba(205,229,238,.88),rgba(247,241,226,.42)),linear-gradient(180deg,#a9d6ed,#e9e0c9);box-shadow:var(--shadow)}
@@ -66,327 +66,1281 @@ footer p{margin:4px;color:#d8e6ee}.footer-big{font-size:20px;font-weight:900}
 <button id="nav-shravan" onclick="go('shravan')">👦 Shravan⌄</button>
 <button id="nav-projects" onclick="go('projects')">💡 Our Projects</button>
 <button id="nav-gallery" onclick="go('gallery')">📸 Gallery</button>
+<div id="authArea" class="auth-area"></div>
 </nav></header>
 
 <main id="app" class="page"></main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const H="images/harshith.jpg",S="images/shravan.jpeg";
-const data={
-harshith:{name:"Harshith",nick:"Harshi",age:9,img:H,motto:"Create · Explore · Play",
-interests:["🎨 Crafts","🎻 Violin","🎾 Tennis","🏓 Pickleball","💡 Entrepreneurship","🎥 YouTube"],
-now:["Learning violin","Play tennis and pickleball","Design new crafts","Exploring craft ideas to sell","Create new YouTube videos","Learning fractions in math"]},
-shravan:{name:"Shravan",nick:"Shrav",age:13,img:S,motto:"Build · Learn · Challenge",
-interests:["♟️ Chess","🎮 Video Games","💻 Coding","🥋 Karate","🏀 Basketball","🎹 Keyboard"],
-now:["Exploring new music using keyboard","Geometry and PSAT preparation","Improving basketball skills","Exploring science experiments","Continuing coding","Learning computer basics"]}
-};
-const SUPABASE_URL = "https://feuqwyxillidclvxyxoi.supabase.co";
+const H = "images/harshith.jpg";
+const S = "images/shravan.jpeg";
 
+const data = {
+  harshith: {
+    name: "Harshith", nick: "Harshi", age: 9, img: H,
+    motto: "Create · Explore · Play",
+    interests: ["🎨 Crafts","🎻 Violin","🎾 Tennis","🏓 Pickleball","💡 Entrepreneurship","🎥 YouTube"],
+    now: ["Learning violin","Play tennis and pickleball","Design new crafts","Exploring craft ideas to sell","Create new YouTube videos","Learning fractions in math"]
+  },
+  shravan: {
+    name: "Shravan", nick: "Shrav", age: 13, img: S,
+    motto: "Build · Learn · Challenge",
+    interests: ["♟️ Chess","🎮 Video Games","💻 Coding","🥋 Karate","🏀 Basketball","🎹 Keyboard"],
+    now: ["Exploring new music using keyboard","Geometry and PSAT preparation","Improving basketball skills","Exploring science experiments","Continuing coding","Learning computer basics"]
+  }
+};
+
+const SUPABASE_URL = "https://feuqwyxillidclvxyxoi.supabase.co";
 const SUPABASE_KEY = "sb_publishable_I6ZI6sZ7OzMw9qq6tcQ5Lw_43sM0Pcm";
 
-const supabaseClient = supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
+const supabaseClient = window.supabase?.createClient
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+  : null;
 
 let posts = [];
 let profiles = {};
+let lastDatabaseError = "";
+let currentUser = null;
 
-async function loadProfiles() {
-  const { data: rows, error } = await supabaseClient
-    .from("profiles")
-    .select("id, display_name, role");
+function isAdmin(){ return !!currentUser; }
 
-  if (error) {
-    console.error("Error loading profiles:", error);
-    profiles = {};
-    return;
-  }
+async function updateAuthState(){
+  if(!supabaseClient){ currentUser=null; renderAuthArea(); return; }
+  const {data,error}=await supabaseClient.auth.getUser();
+  currentUser=error ? null : (data.user || null);
+  renderAuthArea();
+}
 
+function esc(value){
+  return String(value ?? "").replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+}
+
+function databaseErrorText(error){
+  return error?.message || error?.details || error?.hint || "Unknown database error.";
+}
+
+function go(route){
+  location.hash = route;
+  if(location.hash.slice(1) === route) render();
+}
+
+async function showLogin(){
+  if(!supabaseClient){ alert("Supabase is not available."); return; }
+  const email = prompt("Admin email:");
+  if(!email) return;
+  const password = prompt("Admin password:");
+  if(!password) return;
+  const { error } = await supabaseClient.auth.signInWithPassword({ email: email.trim(), password });
+  if(error) alert("Login failed: " + databaseErrorText(error));
+}
+
+async function logout(){
+  if(!supabaseClient) return;
+  const { error } = await supabaseClient.auth.signOut();
+  if(error) alert("Logout failed: " + databaseErrorText(error));
+  currentUser = null;
+  renderAuthArea();
+  go("home");
+}
+
+async function loadProfiles(){
   profiles = {};
-  (rows || []).forEach(profile => {
-    profiles[String(profile.role || "").toLowerCase()] = profile;
+  if(!supabaseClient) return;
+  const { data, error } = await supabaseClient.from("profiles").select("*");
+  if(error){ lastDatabaseError = databaseErrorText(error); console.error("Error loading profiles:", error); return; }
+  (data || []).forEach(p => {
+    const key = String(p.role || "").toLowerCase();
+    if(key) profiles[key] = p;
   });
 }
 
-async function loadPosts() {
-  const { data: rows, error } = await supabaseClient
-    .from("posts")
-    .select(`
-      id,
-      author_id,
-      title,
-      content,
-      status,
-      cover_image,
-      created_at,
-      updated_at,
-      profiles ( display_name, role )
-    `)
-    .eq("status", "published")
-    .order("created_at", { ascending: false });
+async function loadPosts(){
+  posts = [];
+  if(!supabaseClient) return;
+  const { data, error } = await supabaseClient.from("posts").select("*").order("created_at", { ascending:false });
+  if(error){ lastDatabaseError = databaseErrorText(error); console.error("Error loading posts:", error); return; }
+  posts = data || [];
+}
 
-  if (error) {
-    console.error("Error loading posts:", error);
-    posts = [];
+function profileData(key){
+  const base = data[key] || {};
+  const db = profiles[key] || {};
+  return {
+    ...base,
+    ...db,
+    name: db.name || base.name || key,
+    age: db.age ?? base.age,
+    img: db.image_url || base.img,
+    motto: db.tagline || base.motto,
+    description: db.description || "",
+    interests: Array.isArray(db.interests) ? db.interests : (db.interests ? String(db.interests).split(/\n|,/).map(x=>x.trim()).filter(Boolean) : base.interests || []),
+    now: Array.isArray(db.working_on) ? db.working_on : (db.working_on ? String(db.working_on).split(/\n/).map(x=>x.trim()).filter(Boolean) : base.now || [])
+  };
+}
+
+function tags(items){ return (items || []).map(x => `<span class="tag">${esc(x)}</span>`).join(""); }
+function listItems(items){ return (items || []).map(x => `<li>${esc(x)}</li>`).join(""); }
+function project(icon,title,desc){ return `<article class="project"><div class="project-body"><div class="label">${esc(icon)} PROJECT</div><h3>${esc(title)}</h3><p>${esc(desc)}</p></div></article>`; }
+
+function postCard(post){
+  return `<article class="post"><div class="post-body"><div class="label">${esc(post.author_role || "JOURNEY")}</div><h3>${esc(post.title || "Untitled")}</h3><p>${esc((post.content || "").slice(0,180))}${(post.content || "").length > 180 ? "…" : ""}</p></div></article>`;
+}
+
+function home(){
+  const h = profileData("harshith"), s = profileData("shravan");
+  document.getElementById("app").innerHTML = `
+    ${lastDatabaseError ? `<div class="panel" style="color:#b45309;margin-bottom:18px">Database connection issue: ${esc(lastDatabaseError)}</div>` : ""}
+    <section class="hero"><div class="hero-content">
+      <div class="hero-kicker">TWO BROTHERS · TWO PERSONALITIES · ONE AMAZING STORY</div>
+      <h1>Our Journey</h1>
+      <h2>A place where we share what we learn, create, play and achieve.</h2>
+      <p>Follow our journey as we explore, experiment and grow together!</p>
+      <div class="signs"><span class="sign">EXPLORE</span><span class="sign">LEARN</span><span class="sign">CREATE</span><span class="sign">GROW</span></div>
+    </div></section>
+    <section class="brothers">
+      <article class="bro-card"><img class="photo" src="${esc(h.img || H)}" alt="${esc(h.name)}"><div><div class="age">${esc(h.age)} YEARS OLD</div><h2>${esc(h.name)}</h2><div class="motto">${esc(h.motto)}</div><div class="tags">${tags(h.interests)}</div><button class="cta" onclick="go('harshith')">Explore ${esc(h.name)}'s Space</button></div></article>
+      <article class="bro-card shrav"><img class="photo" src="${esc(s.img || S)}" alt="${esc(s.name)}"><div><div class="age">${esc(s.age)} YEARS OLD</div><h2>${esc(s.name)}</h2><div class="motto">${esc(s.motto)}</div><div class="tags">${tags(s.interests)}</div><button class="cta" onclick="go('shravan')">Explore ${esc(s.name)}'s Space</button></div></article>
+    </section>`;
+}
+
+function person(key){
+  const p = profileData(key);
+  const rolePosts = posts.filter(post => String(post.author_role || post.role || "").toLowerCase() === key || String(post.author || "").toLowerCase() === key);
+  document.getElementById("app").innerHTML = `
+    <div class="section-title"><div><h2>${key === "harshith" ? "🎨" : "🚀"} ${esc(p.name)}'s Space</h2><p>${esc(p.age)} years old · ${esc(p.motto)}</p></div>${isAdmin() ? `<button class="cta" onclick="newPost('${key}')">＋ New Blog Post</button>` : ""}</div>
+    <div class="two"><div class="panel"><img src="${esc(p.img || (key === "harshith" ? H : S))}" style="width:100%;height:430px;object-fit:cover;border-radius:15px"><h3>${esc(p.name)}</h3><p>${esc(p.description || p.motto || "")}</p></div><div class="panel"><div class="label">MY INTERESTS</div><div class="tags">${tags(p.interests)}</div><h3 style="margin-top:28px">🚀 What I'm Working On</h3><ul>${listItems(p.now)}</ul></div></div>
+    <div class="section-title"><div><h2>📝 Latest Posts</h2><p>Stories, projects and things I'm learning.</p></div></div>
+    <div class="blog-grid">${rolePosts.length ? rolePosts.map(postCard).join("") : `<div class="panel"><p>No posts yet.</p></div>`}</div>`;
+}
+
+function newPost(key){
+  if(!isAdmin()){ alert("Admin access required."); return; }
+  const p = profileData(key);
+  document.getElementById("app").innerHTML = `<div class="panel"><h2>✍️ New Post for ${esc(p.name)}</h2><p>Share an experience, something you learned, a project, or something you like.</p><label>Title</label><input id="postTitle" style="width:100%;padding:12px;margin:8px 0 16px" placeholder="Post title"><label>Write your post</label><textarea id="postContent" style="width:100%;min-height:240px;padding:12px;margin:8px 0 16px"></textarea><div id="postMessage" style="margin-bottom:12px"></div><button class="cta" onclick="publishPost('${key}')">Publish Post</button> <button onclick="person('${key}')">Cancel</button></div>`;
+}
+
+async function publishPost(key){
+  if(!isAdmin()) return;
+  const title = document.getElementById("postTitle").value.trim();
+  const content = document.getElementById("postContent").value.trim();
+  const message = document.getElementById("postMessage");
+  if(!title || !content){ message.style.color="#c0392b"; message.textContent="Title and post content are required."; return; }
+  const profileRow = profiles[key];
+  if(!profileRow){ message.style.color="#c0392b"; message.textContent="Profile not found."; return; }
+  try{
+    const { error } = await supabaseClient.from("posts").insert({ author_id: profileRow.id, title, content, status:"published" });
+    if(error) throw error;
+    message.style.color="#2e8b57"; message.textContent="Post published successfully!";
+    await loadPosts();
+    setTimeout(()=>person(key),500);
+  }catch(error){ message.style.color="#c0392b"; message.textContent="Could not publish: " + databaseErrorText(error); console.error(error); }
+}
+
+async function managePosts(){
+  if(!isAdmin()){ alert("Admin access required."); return; }
+  await loadPosts();
+  const html = `<div class="section-title"><div><h2>📝 Manage Posts</h2><p>${posts.length} post(s) found.</p></div><button onclick="adminDashboard()">← Back to Dashboard</button></div><div class="project-grid">${posts.length ? posts.map(post => `<div class="panel"><h3>${esc(post.title || "Untitled")}</h3><p>${esc((post.content || "").slice(0,220))}</p><p style="margin-top:12px"><button onclick="editPost('${post.id}')">✏️ Edit</button> <button onclick="deletePost('${post.id}')">🗑️ Delete</button></p></div>`).join("") : `<div class="panel"><p>No posts found.</p></div>`}</div>`;
+  document.getElementById("app").innerHTML = html;
+}
+
+function websiteOverview(){
+  const h = profileData("harshith"), s = profileData("shravan");
+  document.getElementById("app").innerHTML = `<div class="section-title"><div><h2>📊 Website Overview</h2><p>Current website content and activity.</p></div><button onclick="adminDashboard()">← Back to Dashboard</button></div><div class="project-grid"><div class="panel"><h3>👦 Profiles</h3><p>Harshith: ${esc(h.name)}<br>Shravan: ${esc(s.name)}</p></div><div class="panel"><h3>📝 Posts</h3><p>${posts.length} post(s) currently loaded.</p></div><div class="panel"><h3>🔐 Admin</h3><p>${esc(currentUser?.email || "Not logged in")}</p></div></div>`;
+}
+
+function renderAuthArea() {
+  const area = document.getElementById("authArea");
+
+  if (!area) return;
+
+  if (isAdmin()) {
+
+    area.innerHTML = `
+      <span class="auth-user">
+        👤 ${esc(currentUser.email || "Admin")}
+      </span>
+
+      <button onclick="adminDashboard()">
+        ⚙️ Admin Dashboard
+      </button>
+
+      <button onclick="logout()">
+        Logout
+      </button>
+    `;
+
+  } else {
+
+    area.innerHTML = `
+      <button onclick="showLogin()">
+        🔐 Admin Login
+      </button>
+    `;
+
+  }
+}
+function adminDashboard() {
+
+  document.getElementById("app").innerHTML = `
+
+    <div class="section-title">
+      <div>
+        <h2>⚙️ Admin Dashboard</h2>
+
+        <p>
+          Manage the Harshith & Shravan website.
+        </p>
+      </div>
+    </div>
+
+    <div class="project-grid">
+
+      <div class="panel">
+        <h3>📝 Manage Posts</h3>
+
+        <p>
+          View, edit, and delete published posts.
+        </p>
+
+        <button onclick="managePosts()">
+          Manage Posts
+        </button>
+      </div>
+
+      <div class="panel">
+        <h3>👦 Manage Profiles</h3>
+
+        <p>
+          Update Harshith and Shravan's profiles.
+        </p>
+
+        <button onclick="manageProfiles()">
+          Manage Profiles
+        </button>
+      </div>
+
+      <div class="panel">
+        <h3>📊 Website Overview</h3>
+
+        <p>
+          View website content and activity.
+        </p>
+
+        <button onclick="websiteOverview()">
+          View Overview
+        </button>
+      </div>
+
+    </div>
+
+  `;
+}
+
+async function deletePost(postId) {
+
+  if (!isAdmin()) {
+    alert("Admin access required.");
     return;
   }
 
-  posts = rows || [];
+  const confirmed = confirm(
+    "Are you sure you want to delete this post?\n\n" +
+    "This action cannot be undone."
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+
+    const { error } =
+      await supabaseClient
+        .from("posts")
+        .delete()
+        .eq("id", postId);
+
+    if (error) {
+      throw error;
+    }
+
+    alert("Post deleted successfully.");
+
+    await loadPosts();
+
+    await managePosts();
+
+  } catch (error) {
+
+    console.error(
+      "Error deleting post:",
+      error
+    );
+
+    alert(
+      "Could not delete post: " +
+      databaseErrorText(error)
+    );
+
+  }
 }
-function esc(x=""){return x.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function go(r){location.hash=r}
-function profile(key){
-let p=data[key];return `<article class="bro-card ${key==="shravan"?"shrav":""}">
-<img class="photo" src="${p.img}" alt="${p.name}">
-<div><div class="age">${p.age} YEARS OLD</div><h2>${p.name}</h2><div class="motto">${p.motto}</div>
-<div class="tags">${p.interests.map(x=>`<span class="tag">${x}</span>`).join("")}</div>
-<button class="cta" onclick="go('${key}')">Explore ${p.nick} →</button></div></article>`}
-function home(){
-document.getElementById("app").innerHTML=`
-<section class="hero"><div class="hero-content"><div class="hero-kicker">TWO BROTHERS · TWO PERSONALITIES · ONE AMAZING STORY</div>
-<h1>Our Journey</h1><h2>A place where we share what we learn, create, play and achieve.</h2>
-<p>Follow our journey as we explore, experiment and grow together!</p>
-<div class="signs"><span class="sign">EXPLORE</span><span class="sign">LEARN</span><span class="sign">CREATE</span><span class="sign">GROW</span></div></div></section>
-<section class="brothers">${profile("harshith")}${profile("shravan")}</section>
-<div class="section-title"><div><h2>🌱 What We're Doing Now</h2><p>A quick look at what we're currently focused on.</p></div></div>
-<section class="two">${nowPanel("harshith")}${nowPanel("shravan")}</section>
-<div class="section-title"><div><h2>📝 Latest Adventures</h2><p>Our experiences, learnings and things we enjoy.</p></div></div>
-${latest()}
-<div class="section-title"><div><h2>🚀 Our Projects & Creations</h2><p>Ideas, experiments and things we're building.</p></div></div>
-<div class="project-grid">${project("🎨","Craft Ideas","Creative crafts and business ideas.")}${project("🔬","Science Experiments","Exploring how things work.")}${project("💻","Coding Projects","Learning to build something awesome.")}</div>
-<div class="section-title"><div><h2>🗺️ Our Journey Timeline</h2><p>Two paths, shared adventures and plenty of milestones.</p></div></div>
-<div class="two timelines">
-  <div class="timeline person-timeline">
-    <div class="timeline-head"><div class="timeline-avatar"><img src="${data.harshith.img}" alt="Harshith"></div><div><h3>Harshith's Journey</h3><p>Creating · Exploring · Playing</p></div></div>
-    <div class="line">
-      ${mile("Jun","Started","Our website journey")}${mile("Jul","Violin","Began learning violin")}${mile("Aug","Tennis","Play tennis and pickleball")}${mile("Sep","Crafts","Design new crafts")}${mile("Next","Business","Exploring business ideas")}
+
+async function editPost(postId) {
+
+  if (!isAdmin()) {
+    alert("Admin access required.");
+    return;
+  }
+
+  document.getElementById("app").innerHTML = `
+    <div class="section-title">
+      <div>
+        <h2>✏️ Edit Post</h2>
+        <p>Loading post...</p>
+      </div>
     </div>
-  </div>
-  <div class="timeline person-timeline">
-    <div class="timeline-head"><div class="timeline-avatar"><img src="${data.shravan.img}" alt="Shravan"></div><div><h3>Shravan's Journey</h3><p>Building · Learning · Challenging</p></div></div>
-    <div class="line">
-      ${mile("Jun","Started","Our website journey")}${mile("Jul","Geometry","Learning new levels")}${mile("Aug","Basketball","Improving skills")}${mile("Sep","Science","Exploring experiments")}${mile("Next","Coding","Building projects")}
-    </div>
-  </div>
-</div>`;
-}
-function nowPanel(key){let p=data[key];return `<div class="panel ${key==="shravan"?"shrav":""}"><div class="label">${p.name.toUpperCase()}</div><h3>${p.motto}</h3><ul>${p.now.map(x=>`<li>${x}</li>`).join("")}</ul></div>`}
-function project(icon,title,txt){return `<article class="project"><div class="project-body"><div style="font-size:32px">${icon}</div><h3>${title}</h3><p>${txt}</p></div></article>`}
-function mile(a,b,c){return `<div class="milestone"><div class="dot"></div><strong>${a} · ${b}</strong><p>${c}</p></div>`}
-function latest(){
+  `;
 
-  if(!posts.length){
+  try {
 
-    return `
-      <div class="empty panel"
-           style="text-align:center;color:#64748b">
+    const { data: post, error } =
+      await supabaseClient
+        .from("posts")
+        .select(`
+          id,
+          title,
+          content,
+          status
+        `)
+        .eq("id", postId)
+        .single();
 
-        No blog posts yet.
-        Start the first adventure from Harshith or Shravan's page.
+    if (error) {
+      throw error;
+    }
+
+    document.getElementById("app").innerHTML = `
+
+      <div class="section-title">
+
+        <div>
+          <h2>✏️ Edit Post</h2>
+          <p>Update the post details below.</p>
+        </div>
+
+        <button onclick="managePosts()">
+          ← Back to Posts
+        </button>
 
       </div>
+
+
+      <div class="panel">
+
+        <label>Title</label>
+
+        <input
+          id="editPostTitle"
+          type="text"
+          value="${esc(post.title || "")}"
+          style="width:100%;margin:10px 0 20px"
+        />
+
+
+        <label>Content</label>
+
+        <textarea
+          id="editPostContent"
+          style="
+            width:100%;
+            min-height:250px;
+            margin:10px 0 20px
+          "
+        >${esc(post.content || "")}</textarea>
+
+
+        <label>Status</label>
+
+        <select
+          id="editPostStatus"
+          style="margin:10px 0 25px"
+        >
+
+          <option
+            value="published"
+            ${post.status === "published"
+              ? "selected"
+              : ""}
+          >
+            Published
+          </option>
+
+          <option
+            value="draft"
+            ${post.status === "draft"
+              ? "selected"
+              : ""}
+          >
+            Draft
+          </option>
+
+        </select>
+
+
+        <br>
+
+
+        <button
+          class="primary"
+          onclick="savePostChanges('${post.id}')"
+        >
+          💾 Save Changes
+        </button>
+
+
+        <button onclick="managePosts()">
+          Cancel
+        </button>
+
+      </div>
+
+    `;
+
+  } catch (error) {
+
+    console.error(
+      "Error loading post:",
+      error
+    );
+
+    document.getElementById("app").innerHTML = `
+
+      <div class="panel">
+
+        <h2>✏️ Edit Post</h2>
+
+        <p style="color:#c0392b">
+
+          Could not load post:
+          ${esc(databaseErrorText(error))}
+
+        </p>
+
+
+        <button onclick="managePosts()">
+          ← Back to Posts
+        </button>
+
+      </div>
+
     `;
 
   }
 
-  return `
+}
 
-    <div class="blog-grid">
+async function savePostChanges(postId) {
 
-      ${posts.slice(0,3).map(post => `
+  if (!isAdmin()) {
+    alert("Admin access required.");
+    return;
+  }
 
-        <article class="post">
 
-          ${post.cover_image ? `
-            <img
-              src="${post.cover_image}"
-              alt="${esc(post.title)}"
-              style="
-                width:100%;
-                height:180px;
-                object-fit:cover;
-              "
-            >
-          ` : ""}
+  const title =
+    document
+      .getElementById("editPostTitle")
+      .value
+      .trim();
 
-          <div class="post-body">
 
-            <div class="label">
+  const content =
+    document
+      .getElementById("editPostContent")
+      .value
+      .trim();
 
-              ${
-                post.profiles?.display_name ||
-                "OUR JOURNEY"
-              }
 
-            </div>
+  const status =
+    document
+      .getElementById("editPostStatus")
+      .value;
 
-            <h3>${esc(post.title)}</h3>
+
+  if (!title) {
+
+    alert("Please enter a title.");
+
+    return;
+
+  }
+
+
+  if (!content) {
+
+    alert("Please enter post content.");
+
+    return;
+
+  }
+
+
+  try {
+
+    const { error } =
+      await supabaseClient
+        .from("posts")
+        .update({
+
+          title: title,
+
+          content: content,
+
+          status: status
+
+        })
+        .eq("id", postId);
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    alert("Post updated successfully.");
+
+
+    await loadPosts();
+
+
+    await managePosts();
+
+
+  } catch (error) {
+
+    console.error(
+      "Error updating post:",
+      error
+    );
+
+
+    alert(
+      "Could not update post: " +
+      databaseErrorText(error)
+    );
+
+  }
+
+}
+async function managePosts() {
+
+  if (!isAdmin()) {
+    alert("Admin access required.");
+    return;
+  }
+
+  document.getElementById("app").innerHTML = `
+    <div class="section-title">
+      <div>
+        <h2>📝 Manage Posts</h2>
+        <p>Loading posts...</p>
+      </div>
+    </div>
+  `;
+
+  try {
+
+    const { data: posts, error } =
+      await supabaseClient
+        .from("posts")
+        .select("*")
+        .order("created_at", {
+          ascending: false
+        });
+
+    if (error) {
+      throw error;
+    }
+
+
+    let html = `
+
+      <div class="section-title">
+
+        <div>
+
+          <h2>📝 Manage Posts</h2>
+
+          <p>
+            ${posts.length} post(s) found.
+          </p>
+
+        </div>
+
+
+        <button onclick="adminDashboard()">
+          ← Back to Dashboard
+        </button>
+
+      </div>
+
+    `;
+
+
+    if (!posts || posts.length === 0) {
+
+      html += `
+
+        <div class="panel">
+
+          <p>No posts found.</p>
+
+        </div>
+
+      `;
+
+    } else {
+
+      html += `<div class="project-grid">`;
+
+
+      posts.forEach(post => {
+
+        const date = post.created_at
+          ? new Date(post.created_at).toLocaleDateString()
+          : "Unknown";
+
+
+        html += `
+
+          <div class="panel">
+
+            <h2>
+              ${esc(post.title || "Untitled")}
+            </h2>
+
 
             <p>
-              ${esc(post.content || "").slice(0,150)}
+
+              ${esc(
+                post.content
+                  ? post.content.substring(0, 180)
+                  : ""
+              )}
+
+              ${post.content &&
+                post.content.length > 180
+                  ? "..."
+                  : ""}
+
             </p>
+
+
+            <p>
+
+              <strong>Status:</strong>
+
+              ${esc(post.status || "published")}
+
+            </p>
+
+
+            <p>
+
+              <strong>Date:</strong>
+
+              ${esc(date)}
+
+            </p>
+
+
+            <div style="
+              display:flex;
+              gap:10px;
+              margin-top:20px;
+            ">
+
+              <button
+                onclick="editPost('${post.id}')"
+              >
+
+                ✏️ Edit
+
+              </button>
+
+
+              <button
+                onclick="deletePost('${post.id}')"
+                style="
+                  background:#c0392b;
+                  color:white;
+                "
+              >
+
+                🗑️ Delete
+
+              </button>
+
+            </div>
 
           </div>
 
-        </article>
+        `;
 
-      `).join("")}
+      });
 
-    </div>
 
-  `;
+      html += `</div>`;
 
-}
-function person(key){
-  const p = data[key];
-  const profileRow = profiles[key];
-  const ps = posts.filter(post =>
-    post.profiles?.role === key || post.author_id === profileRow?.id
-  );
+    }
 
-  document.getElementById("app").innerHTML=`
-    <div class="section-title">
-      <div>
-        <h2>${key==="harshith"?"🎨":"🚀"} ${p.name}'s Space</h2>
-        <p>${p.age} years old · ${p.motto}</p>
-      </div>
-      <button class="cta" onclick="newPost('${key}')">＋ New Blog Post</button>
-    </div>
-    <section class="two">
-      <div class="panel"><img class="photo" style="width:100%;height:330px" src="${p.img}" alt="${p.name}"></div>
+
+    document.getElementById("app").innerHTML =
+      html;
+
+
+  } catch (error) {
+
+    console.error(
+      "Error loading posts:",
+      error
+    );
+
+
+    document.getElementById("app").innerHTML = `
+
       <div class="panel">
-        <div class="label">MY INTERESTS</div>
-        <div class="tags">${p.interests.map(x=>`<span class="tag">${x}</span>`).join("")}</div>
-        <h3 style="margin-top:25px">🚀 What I'm Working On</h3>
-        <ul>${p.now.map(x=>`<li>${x}</li>`).join("")}</ul>
+
+        <h2>📝 Manage Posts</h2>
+
+
+        <p style="color:#c0392b">
+
+          Could not load posts:
+
+          ${esc(databaseErrorText(error))}
+
+        </p>
+
+
+        <button onclick="adminDashboard()">
+
+          ← Back to Dashboard
+
+        </button>
+
       </div>
-    </section>
-    <div class="section-title"><div><h2>📝 ${p.nick}'s Blog</h2><p>Experiences, learnings, likes and discoveries.</p></div></div>
-    ${ps.length ? `
-      <div class="blog-grid">
-        ${ps.map(post=>`
-          <article class="post">
-            ${post.cover_image ? `<img src="${post.cover_image}" alt="${esc(post.title)}" style="width:100%;height:180px;object-fit:cover">` : ""}
-            <div class="post-body">
-              <div class="label">${esc(post.profiles?.display_name || p.name)} · ${post.created_at ? new Date(post.created_at).toLocaleDateString(undefined,{month:"short",year:"numeric"}) : ""}</div>
-              <h3>${esc(post.title)}</h3>
-              <p>${esc(post.content || "")}</p>
-            </div>
-          </article>`).join("")}
-      </div>` : `
-      <div class="empty panel" style="text-align:center">
-        <h3>No posts yet!</h3>
-        <p>Start sharing your experiences and learnings.</p>
-        <button class="cta" onclick="newPost('${key}')">Create First Post</button>
-      </div>`}
-  `;
+
+    `;
+
+  }
+
 }
 
-function newPost(key){
-  const p=data[key];
-  document.getElementById("app").innerHTML=`
-    <div class="panel" style="max-width:780px;margin:25px auto">
-      <h2>📝 New Post for ${p.nick}</h2>
-      <p style="color:#64748b">Share an experience, something you learned, a project, or something you like.</p>
-      <form onsubmit="publish(event,'${key}')">
-        <label>Title</label>
-        <input id="title" required placeholder="My first violin practice..." style="width:100%;padding:12px;margin:7px 0 15px;border:1px solid #ddd;border-radius:10px">
-        <label>Write your post</label>
-        <textarea id="body" required placeholder="What happened? What did you learn? What did you like?" style="width:100%;min-height:220px;padding:12px;margin:7px 0 15px;border:1px solid #ddd;border-radius:10px"></textarea>
-        <div id="postMessage" style="margin-bottom:12px;color:#64748b"></div>
-        <button class="cta" type="submit">Publish Post</button>
-        <button type="button" class="cta" style="background:#64748b" onclick="go('${key}')">Cancel</button>
-      </form>
+async function editPost(postId) {
+
+  if (!isAdmin()) {
+    alert("Admin access required.");
+    return;
+  }
+
+
+  try {
+
+    const { data: post, error } =
+      await supabaseClient
+        .from("posts")
+        .select("*")
+        .eq("id", postId)
+        .single();
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    document.getElementById("app").innerHTML = `
+
+      <div class="section-title">
+
+        <div>
+
+          <h2>✏️ Edit Post</h2>
+
+          <p>
+            Update this post and save your changes.
+          </p>
+
+        </div>
+
+
+        <button onclick="managePosts()">
+
+          ← Back to Posts
+
+        </button>
+
+      </div>
+
+
+      <div class="panel">
+
+        <label>
+
+          Title
+
+        </label>
+
+
+        <input
+          id="editPostTitle"
+          type="text"
+          value="${esc(post.title || "")}"
+          style="
+            width:100%;
+            padding:15px;
+            margin-top:8px;
+            margin-bottom:20px;
+            font-size:16px;
+          "
+        />
+
+
+        <label>
+
+          Post Content
+
+        </label>
+
+
+        <textarea
+          id="editPostContent"
+          style="
+            width:100%;
+            min-height:250px;
+            padding:15px;
+            margin-top:8px;
+            margin-bottom:20px;
+            font-size:16px;
+          "
+        >${esc(post.content || "")}</textarea>
+
+
+        <label>
+
+          Status
+
+        </label>
+
+
+        <select
+          id="editPostStatus"
+          style="
+            width:100%;
+            padding:15px;
+            margin-top:8px;
+            margin-bottom:20px;
+            font-size:16px;
+          "
+        >
+
+          <option
+            value="published"
+            ${post.status === "published"
+              ? "selected"
+              : ""}
+          >
+
+            Published
+
+          </option>
+
+
+          <option
+            value="draft"
+            ${post.status === "draft"
+              ? "selected"
+              : ""}
+          >
+
+            Draft
+
+          </option>
+
+        </select>
+
+
+        <p
+          id="editPostMessage"
+          style="
+            min-height:24px;
+          "
+        ></p>
+
+
+        <div style="
+          display:flex;
+          gap:10px;
+        ">
+
+
+          <button
+            id="savePostButton"
+            onclick="savePostChanges('${post.id}')"
+          >
+
+            💾 Save Changes
+
+          </button>
+
+
+          <button onclick="managePosts()">
+
+            Cancel
+
+          </button>
+
+
+        </div>
+
+
+      </div>
+
+    `;
+
+
+  } catch (error) {
+
+    console.error(
+      "Error loading post:",
+      error
+    );
+
+
+    alert(
+      "Could not load post: " +
+      databaseErrorText(error)
+    );
+
+
+    managePosts();
+
+  }
+
+}
+async function savePostChanges(postId) {
+
+  if (!isAdmin()) {
+    alert("Admin access required.");
+    return;
+  }
+
+
+  const title =
+    document
+      .getElementById("editPostTitle")
+      .value
+      .trim();
+
+
+  const content =
+    document
+      .getElementById("editPostContent")
+      .value
+      .trim();
+
+
+  const status =
+    document
+      .getElementById("editPostStatus")
+      .value;
+
+
+  const message =
+    document.getElementById(
+      "editPostMessage"
+    );
+
+
+  const button =
+    document.getElementById(
+      "savePostButton"
+    );
+
+
+  if (!title) {
+
+    message.style.color = "#c0392b";
+
+    message.textContent =
+      "Please enter a title.";
+
+    return;
+
+  }
+
+
+  if (!content) {
+
+    message.style.color = "#c0392b";
+
+    message.textContent =
+      "Please enter post content.";
+
+    return;
+
+  }
+
+
+  button.disabled = true;
+
+  button.textContent =
+    "Saving...";
+
+
+  try {
+
+    const { error } =
+      await supabaseClient
+        .from("posts")
+        .update({
+
+          title: title,
+
+          content: content,
+
+          status: status
+
+        })
+        .eq("id", postId);
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    message.style.color =
+      "#2e8b57";
+
+
+    message.textContent =
+      "Post updated successfully!";
+
+
+    setTimeout(() => {
+
+      managePosts();
+
+    }, 700);
+
+
+  } catch (error) {
+
+    console.error(
+      "Error updating post:",
+      error
+    );
+
+
+    message.style.color =
+      "#c0392b";
+
+
+    message.textContent =
+      "Could not update post: " +
+      databaseErrorText(error);
+
+
+    button.disabled = false;
+
+    button.textContent =
+      "💾 Save Changes";
+
+  }
+
+}
+
+async function deletePost(postId) {
+
+  if (!isAdmin()) {
+    alert("Admin access required.");
+    return;
+  }
+
+
+  const confirmed =
+    confirm(
+      "Are you sure you want to delete this post?\n\n" +
+      "This action cannot be undone."
+    );
+
+
+  if (!confirmed) {
+    return;
+  }
+
+
+  try {
+
+    const { error } =
+      await supabaseClient
+        .from("posts")
+        .delete()
+        .eq("id", postId);
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    alert(
+      "Post deleted successfully."
+    );
+
+
+    await loadPosts();
+
+
+    managePosts();
+
+
+  } catch (error) {
+
+    console.error(
+      "Error deleting post:",
+      error
+    );
+
+
+    alert(
+      "Could not delete post: " +
+      databaseErrorText(error)
+    );
+
+  }
+
+}
+
+
+
+async function saveProfile(profileId) {
+  if (!isAdmin()) { alert("Admin access required."); return; }
+  const getValue = field => {
+    const el = document.getElementById(`profile-${field}-${profileId}`);
+    return el ? el.value.trim() : "";
+  };
+  const message = document.getElementById("profile-message-" + profileId);
+  const name = getValue("name");
+  const role = getValue("role");
+  const ageValue = getValue("age");
+  const age = ageValue === "" ? null : Number.parseInt(ageValue, 10);
+  if (!name) { message.style.color="#c0392b"; message.textContent="Name cannot be empty."; return; }
+  if (ageValue !== "" && !Number.isInteger(age)) { message.style.color="#c0392b"; message.textContent="Age must be a whole number."; return; }
+  message.style.color="#64748b"; message.textContent="Saving...";
+  try {
+    const { error } = await supabaseClient.from("profiles").update({
+      name,
+      role,
+      age,
+      tagline: getValue("tagline"),
+      description: getValue("description"),
+      image_url: getValue("image"),
+      interests: getValue("interests"),
+      working_on: getValue("working")
+    }).eq("id", profileId);
+    if (error) throw error;
+    await loadProfiles();
+    message.style.color="#2e8b57";
+    message.textContent="✓ Changes saved successfully!";
+  } catch (error) {
+    console.error("Error saving profile:", error);
+    message.style.color="#c0392b";
+    message.textContent="Could not save: " + databaseErrorText(error);
+  }
+}
+
+function gallery() {
+  document.getElementById("app").innerHTML = `
+    <div class="section-title"><div>
+      <h2>📸 Gallery</h2><p>Moments from our journey.</p>
+    </div></div>
+    <div class="two">
+      <div class="panel">
+        <img src="${H}" style="width:100%;height:430px;object-fit:cover;border-radius:15px">
+        <h3>Harshi</h3><p>Creating, learning and exploring.</p>
+      </div>
+      <div class="panel">
+        <img src="${S}" style="width:100%;height:430px;object-fit:cover;border-radius:15px">
+        <h3>Shrav</h3><p>Building, learning and challenging himself.</p>
+      </div>
     </div>`;
 }
 
-async function publish(e,key){
-  e.preventDefault();
-  const message = document.getElementById("postMessage");
-  const profileRow = profiles[key];
-  if(!profileRow?.id){
-    message.textContent = "Profile is not configured in Supabase yet.";
-    return;
-  }
-
-  const title = document.getElementById("title").value.trim();
-  const content = document.getElementById("body").value.trim();
-  message.textContent = "Publishing...";
-
-  const { error } = await supabaseClient
-    .from("posts")
-    .insert({
-      author_id: profileRow.id,
-      title,
-      content,
-      status: "published"
-    });
-
-  if(error){
-    console.error("Error publishing post:", error);
-    message.textContent = "Could not publish the post. Check the Supabase RLS INSERT policy.";
-    return;
-  }
-
-  await loadPosts();
-  go(key);
-  if(location.hash.slice(1) === key) person(key);
+function projects() {
+  document.getElementById("app").innerHTML = `
+    <div class="section-title"><div>
+      <h2>🚀 Our Projects & Creations</h2>
+      <p>Ideas we are exploring together and individually.</p>
+    </div></div>
+    <div class="project-grid">
+      ${project("🎨","Harshi's Craft Business","New crafts, product ideas, making, pricing and learning about entrepreneurship.")}
+      ${project("🎻","Harshi's Violin Journey","Practice notes, songs, milestones and what he learns along the way.")}
+      ${project("🎾","Sports Journey","Tennis, pickleball and basketball practice and progress.")}
+      ${project("💻","Shrav's Coding","Computer basics, coding experiments and future projects.")}
+      ${project("🔬","Science Lab","Questions, experiments, observations and discoveries.")}
+      ${project("🎹","Keyboard Journey","Songs Shrav is learning and music milestones.")}
+    </div>`;
 }
-function gallery(){
-document.getElementById("app").innerHTML=`<div class="section-title"><div><h2>📸 Gallery</h2><p>Moments from our journey.</p></div></div><div class="two"><div class="panel"><img src="${H}" style="width:100%;height:430px;object-fit:cover;border-radius:15px"><h3>Harshi</h3><p>Creating, learning and exploring.</p></div><div class="panel"><img src="${S}" style="width:100%;height:430px;object-fit:cover;border-radius:15px"><h3>Shrav</h3><p>Building, learning and challenging himself.</p></div></div>`}
-function projects(){document.getElementById("app").innerHTML=`<div class="section-title"><div><h2>🚀 Our Projects & Creations</h2><p>Ideas we are exploring together and individually.</p></div></div><div class="project-grid">${project("🎨","Harshi's Craft Business","New crafts, product ideas, making, pricing and learning about entrepreneurship.")}${project("🎻","Harshi's Violin Journey","Practice notes, songs, milestones and what he learns along the way.")}${project("🎾","Sports Journey","Tennis, pickleball and basketball practice and progress.")}${project("💻","Shrav's Coding","Computer basics, coding experiments and future projects.")}${project("🔬","Science Lab","Questions, experiments, observations and discoveries.")}${project("🎹","Keyboard Journey","Songs Shrav is learning and music milestones.")}</div>`}
-function setActiveNav(route){
-  document.querySelectorAll(".nav button").forEach(button => button.classList.remove("primary"));
+
+function setActiveNav(route) {
+  document.querySelectorAll(".nav button")
+    .forEach(button => button.classList.remove("primary"));
+
   const activeButton = document.getElementById("nav-" + route);
-  if(activeButton) activeButton.classList.add("primary");
+  if (activeButton) activeButton.classList.add("primary");
 }
 
-async function render(){
+async function render() {
+  let route = location.hash.slice(1) || "home";
 
-  let r = location.hash.slice(1) || "home";
-
-  if(![
-    "home",
-    "harshith",
-    "shravan",
-    "projects",
-    "gallery"
-  ].includes(r)){
-    r = "home";
+  if (!["home","harshith","shravan","projects","gallery"].includes(route)) {
+    route = "home";
   }
 
-  setActiveNav(r);
+  setActiveNav(route);
 
   document.getElementById("app").innerHTML = `
-    <div class="panel" style="text-align:center">
-      Loading...
-    </div>
-  `;
+    <div class="panel" style="text-align:center">Loading...</div>`;
+
+  lastDatabaseError = "";
 
   await loadProfiles();
   await loadPosts();
 
-  if(r === "home"){
-    home();
-  }
-  else if(r === "harshith"){
-    person("harshith");
-  }
-  else if(r === "shravan"){
-    person("shravan");
-  }
-  else if(r === "gallery"){
-    gallery();
-  }
-  else{
-    projects();
-  }
-
+  if (route === "home") home();
+  else if (route === "harshith") person("harshith");
+  else if (route === "shravan") person("shravan");
+  else if (route === "gallery") gallery();
+  else projects();
 }
-window.addEventListener("hashchange",render);
-render();
+
+window.addEventListener("hashchange", render);
+
+if (supabaseClient) {
+  supabaseClient.auth.onAuthStateChange((_event, session) => {
+    currentUser = session?.user || null;
+    renderAuthArea();
+  });
+}
+
+(async function startApp() {
+  await updateAuthState();
+  render();
+})();
 </script>
 <footer><div class="footer-big">Today We Learn · Tomorrow We Grow · Together We Go Further</div><p>Harshith & Shravan · Our Journey</p></footer>
 </body>
